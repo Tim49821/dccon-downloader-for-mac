@@ -1,0 +1,10 @@
+{
+    "python_executable": "python3",
+    "project_dir": ".",
+    "exec_file": "src/dccon/app.py",
+    "project_name": "dccon-macos",
+    "app_name": "디시콘 저장기",
+    "qml_files": [],
+    "excluded_qml_plugins": [],
+    "wheel": false
+}

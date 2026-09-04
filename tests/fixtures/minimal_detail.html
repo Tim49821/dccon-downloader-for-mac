@@ -1,0 +1,29 @@
+<!doctype html>
+<html><head><meta charset="utf-8"></head><body>
+<!-- 목록 페이지 썸네일 (상세 레이어 밖 – 제외되어야 함) -->
+<div class="thumb_list">
+  <img src="https://thumb.dcinside.com/dccon.php?no=thumb1" alt="썸네일1">
+</div>
+<!-- 현재 상세 레이어 (visible) -->
+<div class="dccon_detail" data-package-id="999" style="display:block">
+  <h3>테스트 묶음</h3>
+  <ul class="list">
+    <li><img src="https://img.dcinside.com/dccon.php?no=aaa111" alt="웃음"></li>
+    <li><img src="https://img.dcinside.com/dccon.php?no=bbb222" alt=""></li>
+    <li><img src="https://img.dcinside.com/dccon.php?no=ccc333" alt="눈물"></li>
+    <!-- 중복 URL이지만 별개 DOM 항목 – 보존 -->
+    <li><img src="https://img.dcinside.com/dccon.php?no=aaa111" alt="웃음2"></li>
+  </ul>
+</div>
+<!-- 숨은 상세 레이어 (다른 묶음 – 제외) -->
+<div class="dccon_detail" data-package-id="888" style="display:none">
+  <h3>숨은 묶음</h3>
+  <ul class="list">
+    <li><img src="https://img.dcinside.com/dccon.php?no=zzz999" alt="숨은아이템"></li>
+  </ul>
+</div>
+<!-- 광고 이미지 (경로 불일치 – 제외) -->
+<div class="ad">
+  <img src="https://ad.dcinside.com/banner.jpg" alt="광고">
+</div>
+</body></html>

@@ -1,0 +1,44 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+*.part
+.pytest_cache/
+.DS_Store
+*.app
+deployment/
+
+# Local design documents
+/docs/
+
+# Local secrets and browser/session data
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+*.p12
+*.pfx
+*.mobileprovision
+credentials.json
+secrets.json
+cookies.txt
+cookies.json
+Cookies
+Cookies-journal
+Login Data
+Login Data-journal
+Web Data
+Web Data-journal
+Local Storage/
+Session Storage/
+*.log
+*.har
+
+# Exported content and release archives
+*.zip
+*.dmg
