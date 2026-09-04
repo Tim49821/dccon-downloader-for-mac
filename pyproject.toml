@@ -3,6 +3,8 @@ name = "dccon-macos"
 version = "0.1.0"
 description = "macOS 디시콘 저장기 - PySide6 + Qt WebEngine"
 readme = "README.md"
+license = "LicenseRef-DCCon-Attribution-NonCommercial-1.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 dependencies = [
     "PySide6>=6.6",
@@ -19,7 +21,7 @@ testpaths = ["tests"]
 pythonpath = ["src"]
 
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
