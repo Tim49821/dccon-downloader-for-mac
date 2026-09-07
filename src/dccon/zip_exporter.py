@@ -73,7 +73,7 @@ def export_zip(
             zf.writestr(_dir_info(safe_title, timestamp), b"")
 
             for d in downloaded_sorted:
-                ext = d.image_format  # 'png' | 'gif'
+                ext = d.image_format  # 'png' | 'gif' | 'jpg'
                 fname = image_filename(d.item.order, total, d.item.label, ext)
                 arcname = f"{safe_title}/{fname}"
                 zi = _zip_info(arcname, timestamp)

@@ -4,7 +4,7 @@ PySide6 + Qt WebEngine 기반 macOS용 디시콘 다운로더입니다.
 
 - https://dccon.dcinside.com/ 전용 내장 브라우저
 - 상세 레이어 감지 및 한 묶음 ZIP 저장
-- 원본 PNG/GIF 보존, 순번 파일명, 최상위 폴더 구조
+- 원본 PNG/GIF/JPEG 보존, 순번 파일명, 최상위 폴더 구조
 
 ## 코드 라이선스
 

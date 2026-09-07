@@ -26,7 +26,7 @@ class DcconPackage:
 class DownloadedItem:
     item: DcconItem
     temporary_path: Path
-    image_format: Literal["png", "gif"]
+    image_format: Literal["png", "gif", "jpg"]
     byte_count: int
 
 

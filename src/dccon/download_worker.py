@@ -148,7 +148,7 @@ def _download_one(
                     break
 
                 # 성공: 임시 파일로 기록 (메모리 장기 보관 금지)
-                ext = fmt  # 'png' | 'gif'
+                ext = fmt  # 'png' | 'gif' | 'jpg'
                 fd, tmp_path_str = tempfile.mkstemp(suffix=f".{ext}", dir=str(temp_dir))
                 try:
                     os.write(fd, data)

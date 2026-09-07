@@ -15,10 +15,16 @@ from dccon.models import DcconItem
 from dccon.validators import PNG_SIG, GIF89A
 
 
+JPEG_BYTES = (
+    b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00"
+    b"\xff\xd9"
+)
+
+
 # 간단 핸들러 팩토리
 class TestHandler(http.server.BaseHTTPRequestHandler):
     # 클래스 변수로 시나리오 설정
-    scenario = "ok_png"  # ok_png, ok_gif, 404, 429_then_ok, 500_then_ok, timeout_then_ok, html_error, truncated
+    scenario = "ok_png"  # ok_png, ok_gif, ok_jpeg, 404, 429_then_ok, 500_then_ok, timeout_then_ok, html_error, truncated
     call_count = 0
     retry_after = "1"
 
@@ -40,6 +46,11 @@ class TestHandler(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-Type", "image/gif")
             self.end_headers()
             self.wfile.write(GIF89A + b"\x00" * 100)
+        elif TestHandler.scenario == "ok_jpeg":
+            self.send_response(200)
+            self.send_header("Content-Type", "image/jpeg")
+            self.end_headers()
+            self.wfile.write(JPEG_BYTES)
         elif TestHandler.scenario == "404":
             self.send_response(404)
             self.end_headers()
@@ -128,6 +139,19 @@ def test_ok_gif(http_server):
         succ, fail = worker.download_all([make_item(http_server)], Path(td))
         assert len(succ) == 1
         assert succ[0].image_format == "gif"
+
+
+def test_ok_jpeg_preserves_original_bytes(http_server):
+    TestHandler.scenario = "ok_jpeg"
+    TestHandler.call_count = 0
+    worker = DownloadWorker(user_agent="ua", referer="http://ref", timeout=5)
+    with tempfile.TemporaryDirectory() as td:
+        succ, fail = worker.download_all([make_item(http_server)], Path(td))
+        assert len(succ) == 1
+        assert len(fail) == 0
+        assert succ[0].image_format == "jpg"
+        assert succ[0].temporary_path.suffix == ".jpg"
+        assert succ[0].temporary_path.read_bytes() == JPEG_BYTES
 
 
 def test_404(http_server):

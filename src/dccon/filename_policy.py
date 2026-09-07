@@ -77,7 +77,7 @@ def format_order(order: int, total: int) -> str:
 def image_filename(order: int, total: int, label: str, ext: str) -> str:
     """{순번}_{레이블}.{확장자} 또는 {순번}.{확장자}.
 
-    ext는 'png' | 'gif' (점 없음). label은 원본 alt 값.
+    ext는 'png' | 'gif' | 'jpg' (점 없음). label은 원본 alt 값.
     """
     order_str = format_order(order, total)
     safe = safe_label(label)

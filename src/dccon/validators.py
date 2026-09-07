@@ -48,17 +48,20 @@ def validate_package(pkg: DcconPackage) -> None:
 PNG_SIG = bytes.fromhex("89 50 4E 47 0D 0A 1A 0A")
 GIF87A = b"GIF87a"
 GIF89A = b"GIF89a"
+JPEG_SIG = bytes.fromhex("FF D8 FF")
 
 
-def detect_image_format(data: bytes, content_type: str | None = None) -> Literal["png", "gif"] | None:
+def detect_image_format(data: bytes, content_type: str | None = None) -> Literal["png", "gif", "jpg"] | None:
     """시그니처 기반 포맷 판별. Content-Type은 충돌 로깅 용도로만 사용."""
     if not data:
         return None
-    fmt: Literal["png", "gif"] | None = None
+    fmt: Literal["png", "gif", "jpg"] | None = None
     if data.startswith(PNG_SIG):
         fmt = "png"
     elif data.startswith(GIF87A) or data.startswith(GIF89A):
         fmt = "gif"
+    elif data.startswith(JPEG_SIG):
+        fmt = "jpg"
     else:
         return None
 
@@ -69,11 +72,13 @@ def detect_image_format(data: bytes, content_type: str | None = None) -> Literal
             ct_fmt = "png"
         elif ct == "image/gif":
             ct_fmt = "gif"
+        elif ct in ("image/jpeg", "image/jpg"):
+            ct_fmt = "jpg"
         # spec: 충돌 시 시그니처 기준, 로그 기록
         if ct_fmt is not None and ct_fmt != fmt:
             logger.warning("Content-Type과 시그니처 충돌: ct=%s sig=%s", ct, fmt)
         elif ct_fmt is None and ct not in ("", "application/octet-stream", "binary/octet-stream"):
-            # PNG/GIF 외 응답은 실패로 간주할 수 있으나 여기서는 시그니처가 맞으면 허용
+            # Content-Type이 알려지지 않아도 시그니처가 맞으면 허용
             # 실제 검증은 validate_image에서 Content-Type 엄격 검사를 선택적으로 수행
             pass
     return fmt
@@ -83,11 +88,11 @@ def validate_image(
     data: bytes,
     content_type: str | None,
     status_code: int | None = None,
-) -> Literal["png", "gif"]:
+) -> Literal["png", "gif", "jpg"]:
     """§6 ImageValidator.
 
     검증 실패 시 ValidationError.
-    성공 시 'png' | 'gif' 반환.
+    성공 시 'png' | 'gif' | 'jpg' 반환.
     """
     if status_code is not None and status_code != 200:
         raise ValidationError(f"HTTP 상태 {status_code}")
@@ -95,16 +100,15 @@ def validate_image(
         raise ValidationError("빈 응답 본문")
     fmt = detect_image_format(data, content_type)
     if fmt is None:
-        # Content-Type이 image/png/gif여도 시그니처가 맞지 않으면 실패
+        # Content-Type이 이미지로 표시되어도 시그니처가 맞지 않으면 실패
         raise ValidationError(f"알 수 없는 이미지 시그니처 (Content-Type={content_type})")
-    # spec: PNG/GIF 외 응답은 실패
-    # detect가 png/gif만 반환하므로 여기서는 png/gif 통과
+    # detect가 지원하는 포맷만 반환하므로 여기서는 검증된 이미지만 통과
     # Content-Type이 명백히 html 등이고 시그니처도 없으면 이미 실패함
     # 추가 방어: Content-Type이 text/html이면 실패로 처리 (200 HTML 오류 페이지)
     if content_type:
         ct = content_type.split(";")[0].strip().lower()
         if ct == "text/html":
-            # 시그니처가 png/gif면 앞서 통과했으나 html로 위장된 경우? 시그니처 우선이므로 허용
+            # 지원 시그니처면 앞서 통과했으나 시그니처 우선이므로 허용
             # 하지만 데이터가 html이면 시그니처 불일치로 이미 실패
             pass
     return fmt
