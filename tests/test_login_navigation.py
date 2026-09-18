@@ -1,9 +1,13 @@
 """로그인 이동과 새 창 링크가 같은 앱 세션을 사용하는지 검증."""
 
 import json
+import os
+from pathlib import Path
+import subprocess
+import sys
 
 import pytest
-from PySide6.QtCore import QUrl
+from PySide6.QtCore import QStandardPaths, QUrl
 from PySide6.QtWebEngineCore import QWebEnginePage
 
 from dccon.url_policy import is_allowed_main_url
@@ -41,7 +45,16 @@ def test_login_does_not_allow_untrusted_navigation(url):
 
 
 @pytest.fixture
-def webview(qtbot):
+def webview(qtbot, tmp_path, monkeypatch):
+    def app_data_path(location):
+        assert location == QStandardPaths.StandardLocation.AppDataLocation
+        return str(tmp_path)
+
+    monkeypatch.setattr(
+        QStandardPaths,
+        "writableLocation",
+        app_data_path,
+    )
     view = DcconWebView()
     qtbot.addWidget(view)
     # The exporter DOM observer is unrelated to navigation and schedules timers.
@@ -49,7 +62,7 @@ def webview(qtbot):
     with qtbot.waitSignal(view.loadFinished, timeout=5000):
         view.setUrl(QUrl("about:blank"))
     yield view
-    # Destroy the page before its off-the-record profile.
+    # Destroy the page before its persistent profile.
     with qtbot.waitSignal(view.page().destroyed, timeout=1000):
         view.page().deleteLater()
 
@@ -93,7 +106,43 @@ def test_new_window_link_navigates_existing_page(webview, qtbot, url):
     qtbot.waitUntil(lambda: (url, True) in navigations, timeout=3000)
     assert webview.page() is page
     assert page.profile() is profile
-    assert profile.isOffTheRecord()
+    assert not profile.isOffTheRecord()
+
+
+def test_web_profile_persists_login_session(webview, tmp_path):
+    profile = webview.page().profile()
+
+    assert not profile.isOffTheRecord()
+    assert profile.persistentStoragePath() == str(tmp_path / "web-profile")
+    assert profile.cachePath() == str(tmp_path / "web-profile" / "cache")
+    assert profile.persistentCookiesPolicy() == (
+        profile.PersistentCookiesPolicy.ForcePersistentCookies
+    )
+
+
+def test_session_cookie_survives_app_restart(tmp_path):
+    helper = Path(__file__).with_name("profile_session_probe.py")
+    repo_root = helper.parent.parent
+    env = os.environ.copy()
+    env["PYTHONPATH"] = os.pathsep.join(
+        filter(None, (str(repo_root / "src"), env.get("PYTHONPATH")))
+    )
+    env["QT_QPA_PLATFORM"] = "offscreen"
+    env["QTWEBENGINE_CHROMIUM_FLAGS"] = (
+        f"{env.get('QTWEBENGINE_CHROMIUM_FLAGS', '')} --disable-gpu".strip()
+    )
+
+    for mode in ("write", "read"):
+        result = subprocess.run(
+            [sys.executable, str(helper), mode, str(tmp_path)],
+            cwd=repo_root,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=20,
+            check=False,
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
 
 
 def test_external_popup_is_blocked_and_reported(webview, qtbot):

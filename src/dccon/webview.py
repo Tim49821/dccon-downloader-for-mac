@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
-from PySide6.QtCore import Signal, QUrl, QFile, QIODevice, Qt
+from PySide6.QtCore import Signal, QUrl, QFile, QIODevice, QStandardPaths, Qt
 from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineProfile, QWebEngineSettings, QWebEngineScript
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QWidget
@@ -77,10 +78,17 @@ class DcconWebView(QWebEngineView):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        # 오프더레코드 프로필 – §12 세션 (디스크에 남기지 않음)
-        # 이름 없는 생성자가 OffTheRecord=True (Qt6)
-        self._profile = QWebEngineProfile(self)
-        # 캐시/방문기록도 휘발성으로 유지 (Qt 기본이 off-the-record면 자동)
+        # 이름 있는 프로필은 앱 재실행 뒤에도 로그인 쿠키를 유지한다.
+        # 외부 브라우저 프로필은 읽지 않고 앱 전용 Application Support 경로만 쓴다.
+        profile_root = Path(
+            QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppDataLocation)
+        ) / "web-profile"
+        self._profile = QWebEngineProfile("dccon-session", self)
+        self._profile.setPersistentStoragePath(str(profile_root))
+        self._profile.setCachePath(str(profile_root / "cache"))
+        self._profile.setPersistentCookiesPolicy(
+            QWebEngineProfile.PersistentCookiesPolicy.ForcePersistentCookies
+        )
         self._page = DcconWebPage(self._profile, self)
         self._page.navigationBlocked.connect(self.navigationBlocked)
         # Wait until the subframe navigation callback returns before loading.
